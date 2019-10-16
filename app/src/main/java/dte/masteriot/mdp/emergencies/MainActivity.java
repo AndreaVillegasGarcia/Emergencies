@@ -25,6 +25,7 @@ import java.util.ArrayList;
 //COMENTARIO DE ANDREA
 public class MainActivity extends AppCompatActivity implements ListView.OnItemClickListener{
 
+    //Comentario de kika
     private static final String URL_CAMERAS = "http://informo.madrid.es/informo/tmadrid/CCTV.kml";
     private ListView lv;
     ImageView imageView;
