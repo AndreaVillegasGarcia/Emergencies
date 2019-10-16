@@ -22,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+//COMENTARIO DE ANDREA
 public class MainActivity extends AppCompatActivity implements ListView.OnItemClickListener{
 
     private static final String URL_CAMERAS = "http://informo.madrid.es/informo/tmadrid/CCTV.kml";
