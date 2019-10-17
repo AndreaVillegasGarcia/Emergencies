@@ -2,10 +2,12 @@ package dte.masteriot.mdp.emergencies;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.View;
 import android.widget.AdapterView;
@@ -13,6 +15,15 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -22,12 +33,24 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-//COMENTARIO DE ANDREA
-//HOLI SOY LANCE
-//OTRO COMENTARIO
+
 public class MainActivity extends AppCompatActivity implements ListView.OnItemClickListener{
 
-    //Comentario de kika
+    float measurement;
+    Context context;
+
+    //MQTT variables
+    MqttAndroidClient mqttAndroidClient;
+    final String serverUri = "tcp://mqtt.thingspeak.com:1883";
+    String clientId = "MDPMQTTExample";
+    final String subscriptionTopic = "channels/886928/subscribe/fields/field1/JLQ98B3XBAQ2RP9Y"; //Clave de lectura
+    final String publishMessage = "10";
+
+    // Keys for accessing ThingSpeak:
+    private static final String UserAPIKey = "YOUR_API_KEY_HERE";
+    private static final String MQTTAPIKey = "GX0XE33JWDK52TO9";
+
+
     private static final String URL_CAMERAS = "http://informo.madrid.es/informo/tmadrid/CCTV.kml";
     private ListView lv;
     ImageView imageView;
@@ -36,31 +59,36 @@ public class MainActivity extends AppCompatActivity implements ListView.OnItemCl
     ArrayList<String> cameraNameList = new ArrayList<String>();
     ArrayList<String> cameraDescriptionList = new ArrayList<String>();
 
+    public static String getMQTTAPIKey() {
+        return MQTTAPIKey;
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        urls = " ";
-        //text =  (TextView) findViewById(R.id.KMLTextView);
-        //btLoad = (Button) findViewById( R.id.readWebpage );
-        //text.setText( "Click button to connect to " + URL_CAMERAS );
-
         lv = findViewById(R.id.listView);
         lv.setChoiceMode( ListView.CHOICE_MODE_SINGLE );
-
-
         imageView = findViewById(R.id.imageView);
 
-        //gsonParse();
+        context = getApplicationContext();
+
         xmlParse();
 
         lv.setOnItemClickListener(this);
         ArrayAdapter adapter = new ArrayAdapter(this,android.R.layout.simple_list_item_single_choice,
                 cameraNameList);
-
         lv.setAdapter(adapter);
+
+
+        MQTT mqtt = new MQTT(this, context);
+        mqtt.mqttConnection();
+
     }
+
+
 
     public void xmlParse(){
         XmlPullParserFactory parserFactory;
@@ -115,51 +143,15 @@ public class MainActivity extends AppCompatActivity implements ListView.OnItemCl
 
             }
         }
-        DownloadImages task1 = new DownloadImages();
-        task1.execute( urls );
+        //DownloadImages task1 = new DownloadImages();
+        //task1.execute( urls );
+
+
+        //Le pasamos al constructor un objeto de tipo MainActivity
+        //asi tenemos las variables del main en la clase DownloadImages
+        DownloadImages taskImages = new DownloadImages(this);
+        taskImages.execute( urls );
     }
-
-    private class DownloadImages extends AsyncTask<String, Void, String > {
-
-        private String contentType = "";
-        Bitmap bitmap;
-
-
-        protected String doInBackground(String... urls) {
-            String response = "";
-
-            HttpURLConnection urlConnection = null;
-            try {
-                URL url = new URL(urls[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-                contentType = urlConnection.getContentType();
-                InputStream is = urlConnection.getInputStream();
-
-                // Content type should be "application/vnd.google-earth.kml+xml"
-                if (contentType.toString()
-                        .contentEquals("image/jpeg")) {
-                    InputStreamReader reader = new InputStreamReader(is);
-                    bitmap = BitmapFactory.decodeStream(is);
-
-                } else {
-                    response = contentType + " not processed";
-                }
-            } catch (Exception e) {
-                response = e.toString();
-            }
-            urlConnection.disconnect();
-            return response;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            //Toast.makeText(MainActivity.this, contentType, Toast.LENGTH_SHORT).show();
-            imageView.setImageBitmap( bitmap );
-
-        }
-    }
-
-
 
 
 }
