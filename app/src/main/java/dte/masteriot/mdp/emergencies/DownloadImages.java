@@ -12,6 +12,7 @@ import java.net.URL;
 
 public class DownloadImages extends AsyncTask<String, Void, String > {
 
+    //hola
     private String contentType = "";
     Bitmap bitmap;
     ImageView imgView;
